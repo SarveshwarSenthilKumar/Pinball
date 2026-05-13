@@ -72,7 +72,7 @@ public class PinballPanel extends JPanel implements ActionListener, KeyListener 
     private static final int   FLIPPER_Y   = H - 90;
     private static final double FLIPPER_UP  = -Math.PI / 5;
     private static final double FLIPPER_DOWN=  Math.PI / 5;
-    private static final double FLIPPER_SPD = 10.00;
+    private static final double FLIPPER_SPD = 0.50;
 
     // ── Ball Launch Position ───────────────────────────────────────────────────
     private static final int LAUNCH_X = W - 26;

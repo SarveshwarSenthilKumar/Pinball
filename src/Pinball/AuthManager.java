@@ -213,7 +213,7 @@ public class AuthManager {
         sb.append("╔══════════════════════════════╗\n");
         sb.append("║        HALL  OF  FAME        ║\n");
         sb.append("╠══════════════════════════════╣\n");
-        List<String[]> scores = ScoreManager.loadAllScores(SCORES_FILE);
+        java.util.List<String[]> scores = ScoreManager.loadAllScores(SCORES_FILE);
         if (scores.isEmpty()) {
             sb.append("║   No scores recorded yet.    ║\n");
         } else {

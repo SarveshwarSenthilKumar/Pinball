@@ -1,11 +1,11 @@
 package Pinball;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
 import java.util.*;
 import java.util.List;
+import javax.swing.*;
 
 /**
  * =============================================================================
@@ -72,7 +72,7 @@ public class PinballPanel extends JPanel implements ActionListener, KeyListener 
     private static final int   FLIPPER_Y   = H - 90;
     private static final double FLIPPER_UP  = -Math.PI / 5;
     private static final double FLIPPER_DOWN=  Math.PI / 5;
-    private static final double FLIPPER_SPD = 0.50;
+    private static final double FLIPPER_SPD = 0.70;
 
     // ── Ball Launch Position ───────────────────────────────────────────────────
     private static final int LAUNCH_X = W - 26;

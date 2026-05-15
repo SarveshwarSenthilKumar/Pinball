@@ -34,14 +34,14 @@ public class PinballPanel extends JPanel implements ActionListener, KeyListener 
     private static final double BUMPER_RESTITUTION = 1.5;
     private static final double FLIPPER_IMPULSE    = 18.0;
 
-    private static final int    FLIPPER_W    = 100;
+    private static final int    FLIPPER_W    = 70;
     private static final int    FLIPPER_H    = 12;
     private static final int    LF_X         = 100;
     private static final int    RF_X         = W - 100;
     private static final int    FLIPPER_Y    = H - 90;
     private static final double FLIPPER_UP   = -Math.PI / 5;
     private static final double FLIPPER_DOWN =  Math.PI / 5;
-    private static final double FLIPPER_SPD  = 0.70;
+    private static final double FLIPPER_SPD  = 0.25;  // was 0.70 — values above 0.33 cause overshoot/spasm
 
     private static final int LAUNCH_X = W - 26;
     private static final int LAUNCH_Y = H - 140;
@@ -204,9 +204,9 @@ public class PinballPanel extends JPanel implements ActionListener, KeyListener 
 
     private void updateFlippers() {
         double t  = leftFlipperUp  ? FLIPPER_UP   : FLIPPER_DOWN;
-        leftFlipperAngle  += (t - leftFlipperAngle)  * FLIPPER_SPD * 3;
+        leftFlipperAngle  += (t - leftFlipperAngle)  * FLIPPER_SPD;
         double rt = rightFlipperUp ? -FLIPPER_UP  : -FLIPPER_DOWN;
-        rightFlipperAngle += (rt - rightFlipperAngle) * FLIPPER_SPD * 3;
+        rightFlipperAngle += (rt - rightFlipperAngle) * FLIPPER_SPD;
     }
 
     private void handleWallCollisions() {
@@ -232,13 +232,7 @@ public class PinballPanel extends JPanel implements ActionListener, KeyListener 
 
     private void onBumperHit(Bumper b, Iterator<Bumper> it) {
         int pts=100*multiplier; score+=pts;
-        int coins;
-        if (megaBumpActive) {
-            coins = 30;
-        } else {
-            coins = 10;
-        }
-        money+=coins;
+        int coins=megaBumpActive?30:10; money+=coins;
         if (fireballHits > 0) {
             b.fireballHits++;
             if (b.fireballHits >= 3) {

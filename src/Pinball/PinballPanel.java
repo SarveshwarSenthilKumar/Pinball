@@ -232,7 +232,13 @@ public class PinballPanel extends JPanel implements ActionListener, KeyListener 
 
     private void onBumperHit(Bumper b, Iterator<Bumper> it) {
         int pts=100*multiplier; score+=pts;
-        int coins=megaBumpActive?30:10; money+=coins;
+        int coins;
+        if (megaBumpActive) {
+            coins = 30;
+        } else {
+            coins = 10;
+        }
+        money+=coins;
         if (fireballHits > 0) {
             b.fireballHits++;
             if (b.fireballHits >= 3) {

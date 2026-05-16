@@ -41,7 +41,7 @@ public class PinballPanel extends JPanel implements ActionListener, KeyListener 
     private static final int    FLIPPER_Y    = H - 90;
     private static final double FLIPPER_UP   = -Math.PI / 5;
     private static final double FLIPPER_DOWN =  Math.PI / 5;
-    private static final double FLIPPER_SPD  = 0.25;  // was 0.70 — values above 0.33 cause overshoot/spasm
+    private static final double FLIPPER_SPD  = 0.33;  // was 0.70 — values above 0.33 cause overshoot/spasm
 
     private static final int LAUNCH_X = W - 26;
     private static final int LAUNCH_Y = H - 140;

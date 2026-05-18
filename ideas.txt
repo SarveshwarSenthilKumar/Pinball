@@ -1,2 +1,3 @@
 fix speed of the flippers
 add additional features found in doc
+maybe save score in text

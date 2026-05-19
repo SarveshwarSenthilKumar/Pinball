@@ -34,7 +34,7 @@ public class PinballPanel extends JPanel implements ActionListener, KeyListener 
     private static final double BUMPER_RESTITUTION = 1.5;
     private static final double FLIPPER_IMPULSE    = 18.0;
 
-    private static final int    FLIPPER_W    = 70;
+    private static final int    FLIPPER_W    = 130;
     private static final int    FLIPPER_H    = 12;
     private static final int    LF_X         = 100;
     private static final int    RF_X         = W - 100;

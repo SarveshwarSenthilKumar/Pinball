@@ -509,6 +509,7 @@ public class PinballPanel extends JPanel implements ActionListener, KeyListener 
                 if (!gameOver && listener instanceof GameWindow) ((GameWindow)listener).openStore(); break;
             case KeyEvent.VK_R:      restartGame();  break;
             case KeyEvent.VK_ESCAPE: System.exit(0); break;
+            case KeyEvent.VK_P: pauseGame(!paused); break;
         }
     }
 

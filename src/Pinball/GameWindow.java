@@ -1,13 +1,13 @@
 package Pinball;
 
-import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+import javax.swing.*;
+import javax.swing.border.*;
 
 /**
  * =============================================================================
@@ -147,7 +147,7 @@ public class GameWindow extends JFrame implements GameListener {
         // Controls cheat-sheet
         hud.add(hudTitle("CONTROLS"));
         hud.add(Box.createVerticalStrut(6));
-        String[] controls = {"← Left flipper","→ Right flipper","Space  Launch","S  Open Store","R  Restart","Esc  Quit"};
+        String[] controls = {"← Left flipper","→ Right flipper","Space  Launch","S  Open Store","R  Restart","Esc  Quit", "P  Pause / Resume"};
         for (String c : controls) {
             JLabel cl = new JLabel(c);
             cl.setFont(new Font("Monospaced", Font.PLAIN, 10));

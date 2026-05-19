@@ -129,7 +129,7 @@ public class PinballPanel extends JPanel implements ActionListener, KeyListener 
     }
 
     private void resetBall() {
-        bx = LAUNCH_X; by = LAUNCH_Y; bvx = 0; bvy = 0;
+        bx = 30 + BALL_RADIUS + (new Random().nextDouble() * (W - 85 - BALL_RADIUS * 2));; by = LAUNCH_Y; bvx = 0; bvy = 0;
         ballInPlay = false; ballTrail.clear();
     }
 

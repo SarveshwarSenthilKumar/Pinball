@@ -106,6 +106,51 @@ public class PinballPanel extends JPanel implements ActionListener, KeyListener 
         timer.start();
     }
 
+    private void handleLineCollision(double x1, double y1,
+                                 double x2, double y2) {
+
+        // Line vector
+        double lx = x2 - x1;
+        double ly = y2 - y1;
+
+        // Ball relative position
+        double t = ((bx - x1) * lx + (by - y1) * ly) /
+                (lx * lx + ly * ly);
+
+        // Clamp to segment
+        t = Math.max(0, Math.min(1, t));
+
+        // Closest point on line
+        double closestX = x1 + t * lx;
+        double closestY = y1 + t * ly;
+
+        // Distance from ball to line
+        double dx = bx - closestX;
+        double dy = by - closestY;
+
+        double dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < BALL_RADIUS && dist > 0.001) {
+
+            // Normal
+            double nx = dx / dist;
+            double ny = dy / dist;
+
+            // Push ball out
+            double overlap = BALL_RADIUS - dist;
+            bx += nx * overlap;
+            by += ny * overlap;
+
+            // Reflect velocity
+            double dot = bvx * nx + bvy * ny;
+
+            bvx = (bvx - 2 * dot * nx) * WALL_RESTITUTION;
+            bvy = (bvy - 2 * dot * ny) * WALL_RESTITUTION;
+
+            spawnWallSparks(closestX, closestY);
+        }
+    }
+
     // =========================================================================
     // Init
     // =========================================================================
@@ -210,10 +255,35 @@ public class PinballPanel extends JPanel implements ActionListener, KeyListener 
     }
 
     private void handleWallCollisions() {
-        if (bx - BALL_RADIUS < 30)     { bx=30+BALL_RADIUS;    bvx= Math.abs(bvx)*WALL_RESTITUTION; spawnWallSparks(bx,by); }
-        if (bx + BALL_RADIUS > W - 30) { bx=W-30-BALL_RADIUS;  bvx=-Math.abs(bvx)*WALL_RESTITUTION; spawnWallSparks(bx,by); }
-        if (by - BALL_RADIUS < 20)     { by=20+BALL_RADIUS;     bvy= Math.abs(bvy)*WALL_RESTITUTION; }
-    }
+
+        if (bx - BALL_RADIUS < 30) {
+            bx = 30 + BALL_RADIUS;
+            bvx = Math.abs(bvx) * WALL_RESTITUTION;
+            spawnWallSparks(bx, by);
+        }
+
+        if (bx + BALL_RADIUS > W - 30) {
+            bx = W - 30 - BALL_RADIUS;
+            bvx = -Math.abs(bvx) * WALL_RESTITUTION;
+            spawnWallSparks(bx, by);
+        }
+
+        if (by - BALL_RADIUS < 20) {
+            by = 20 + BALL_RADIUS;
+            bvy = Math.abs(bvy) * WALL_RESTITUTION;
+        }
+
+        // NEW: extender collisions
+        handleLineCollision(
+            30, H - 120,
+            100, FLIPPER_Y + 10
+        );
+
+        handleLineCollision(
+            W - 30, H - 120,
+            W - 100, FLIPPER_Y + 10
+        );
+    }   
 
     private void handleBumperCollisions() {
         for (Iterator<Bumper> it = bumpers.iterator(); it.hasNext(); ) {
@@ -261,16 +331,73 @@ public class PinballPanel extends JPanel implements ActionListener, KeyListener 
         checkFlipperHit(RF_X, FLIPPER_Y, rightFlipperAngle, false);
     }
 
-    private void checkFlipperHit(int px, int py, double angle, boolean isLeft) {
-        double tipX=px+Math.cos(angle)*FLIPPER_W*(isLeft?1:-1);
-        double tipY=py+Math.sin(angle)*FLIPPER_W;
-        double midX=(px+tipX)/2, midY=(py+tipY)/2;
-        double dist=Math.sqrt((bx-midX)*(bx-midX)+(by-midY)*(by-midY));
-        if (dist < BALL_RADIUS+FLIPPER_H+6) {
+    private void checkFlipperHit(int px, int py,
+                             double angle,
+                             boolean isLeft) {
+
+        int dir = isLeft ? 1 : -1;
+
+        // Flipper tip
+        double x2 = px + Math.cos(angle) * FLIPPER_W * dir;
+        double y2 = py + Math.sin(angle) * FLIPPER_W;
+
+        // Line vector
+        double lx = x2 - px;
+        double ly = y2 - py;
+
+        // Project ball onto flipper segment
+        double t = ((bx - px) * lx + (by - py) * ly) /
+                (lx * lx + ly * ly);
+
+        // Clamp to segment
+        t = Math.max(0, Math.min(1, t));
+
+        // Closest point on flipper
+        double closestX = px + t * lx;
+        double closestY = py + t * ly;
+
+        // Distance from ball to flipper
+        double dx = bx - closestX;
+        double dy = by - closestY;
+
+        double dist = Math.sqrt(dx * dx + dy * dy);
+
+        // REAL collision thickness
+        double hitRadius = BALL_RADIUS + FLIPPER_H / 2.0;
+
+        if (dist < hitRadius && dist > 0.0001) {
+
+            // Surface normal
+            double nx = dx / dist;
+            double ny = dy / dist;
+
+            // Push ball out of flipper
+            double overlap = hitRadius - dist;
+
+            bx += nx * overlap;
+            by += ny * overlap;
+
+            // Reflect velocity
+            double dot = bvx * nx + bvy * ny;
+
+            bvx = (bvx - 2 * dot * nx) * 0.92;
+            bvy = (bvy - 2 * dot * ny) * 0.92;
+
+            // Active flip impulse
             if (isLeft ? leftFlipperUp : rightFlipperUp) {
-                bvy=-FLIPPER_IMPULSE; bvx+=isLeft?2.0:-2.0;
-            } else { if (bvy>0) bvy=-bvy*0.5; }
-            by=Math.min(by, py-BALL_RADIUS-2);
+
+                double boost = FLIPPER_IMPULSE;
+
+                bvx += Math.cos(angle) * boost * dir * 0.35;
+                bvy += Math.sin(angle) * boost * 0.9 - boost * 0.8;
+
+            } else {
+
+                // Passive bounce for down flipper
+                bvy -= 1.5;
+            }
+
+            spawnWallSparks(closestX, closestY);
         }
     }
 

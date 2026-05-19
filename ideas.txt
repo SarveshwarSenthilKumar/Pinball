@@ -1,4 +1,5 @@
 fix speed of the flippers - make sure speed applies everywhere
+make sure the borders work near the paddles
 Ball skins, a feature where the player can pick the color of the ball
 Combo counter, tracks bumper hits
 Sound effects, add music as well

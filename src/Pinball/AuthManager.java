@@ -1,13 +1,13 @@
 package Pinball;
 
-import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import javax.swing.*;
+import javax.swing.border.*;
 
 /**
  * =============================================================================
@@ -69,7 +69,7 @@ public class AuthManager {
         JFrame frame = new JFrame("PINBALL ARCADE — Login");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setResizable(false);
-        frame.setSize(480, 520);
+        frame.setSize(576, 624);
         frame.setLocationRelativeTo(null);
         frame.setContentPane(buildLoginPanel(frame));
         return frame;

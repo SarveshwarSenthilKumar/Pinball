@@ -6,6 +6,9 @@ import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 import javax.swing.*;
 import javax.swing.border.*;
 
@@ -55,7 +58,17 @@ public class GameWindow extends JFrame implements GameListener {
     }
 
     // ── Frame Construction ────────────────────────────────────────────────────
-
+    public void playSound(String soundFile) {
+        try {
+            File file = new File(soundFile);
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(file);
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioStream);
+            clip.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }   
     private void buildUI() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);

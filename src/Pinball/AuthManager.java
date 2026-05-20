@@ -8,6 +8,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.border.*;
+import javax.sound.sampled.*;
 
 /**
  * =============================================================================
@@ -241,6 +242,7 @@ public class AuthManager {
      * @param username the logged-in player's username
      */
     private void launchGame(String username) {
+        MusicPlayer.play("src/Pinball/vanessa.wav");   // place music.wav next to your .class files
         SwingUtilities.invokeLater(() -> {
             GameWindow window = new GameWindow(username, SCORES_FILE);
             window.setVisible(true);
@@ -351,5 +353,61 @@ public class AuthManager {
 
     private void showError(JFrame parent, String msg) {
         JOptionPane.showMessageDialog(parent, msg, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+}
+
+class MusicPlayer {
+ 
+    private static Clip clip = null;
+ 
+    /** Starts looping the given WAV file. Stops any current track first. */
+    public static void play(String wavPath) {
+        stop();
+        Thread thread = new Thread(() -> {
+            try {
+                File file = new File(wavPath);
+                if (!file.exists()) {
+                    System.err.println("[MusicPlayer] File not found: " + wavPath);
+                    return;
+                }
+                AudioInputStream ais = AudioSystem.getAudioInputStream(file);
+                clip = AudioSystem.getClip();
+                clip.open(ais);
+                clip.loop(Clip.LOOP_CONTINUOUSLY);
+                clip.start();
+            } catch (UnsupportedAudioFileException e) {
+                System.err.println("[MusicPlayer] Unsupported format (needs 16-bit PCM WAV): " + e.getMessage());
+            } catch (LineUnavailableException e) {
+                System.err.println("[MusicPlayer] Audio line unavailable: " + e.getMessage());
+            } catch (IOException e) {
+                System.err.println("[MusicPlayer] IO error: " + e.getMessage());
+            }
+        });
+        thread.setDaemon(true);
+        thread.start();
+    }
+ 
+    /** Stops playback immediately. */
+    public static void stop() {
+        if (clip != null && clip.isRunning()) {
+            clip.stop();
+            clip.close();
+            clip = null;
+        }
+    }
+ 
+    /**
+     * Sets volume. 0.0f = silent, 1.0f = full.
+     */
+    public static void setVolume(float gain) {
+        if (clip == null) return;
+        gain = Math.max(0f, Math.min(1f, gain));
+        try {
+            FloatControl vol = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+            float dB = gain == 0f ? vol.getMinimum() : 20f * (float) Math.log10(gain);
+            vol.setValue(Math.max(vol.getMinimum(), Math.min(vol.getMaximum(), dB)));
+        } catch (IllegalArgumentException e) {
+            System.err.println("[MusicPlayer] Volume control not supported.");
+        }
     }
 }

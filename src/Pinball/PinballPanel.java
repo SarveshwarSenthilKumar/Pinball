@@ -11,16 +11,6 @@ import javax.swing.*;
  * =============================================================================
  * PinballPanel.java — Core Game Engine, Physics & Rendering
  * =============================================================================
- * Fixes applied (v3):
- *  • javax.swing.Timer used explicitly — resolves "Timer is ambiguous" error
- *  • drawParticles()  — alpha clamped to [0.0, 1.0]
- *  • drawPopups()     — alpha clamped to [0.0, 1.0]
- *  • drawBallTrail()  — alpha clamped to [0, 255], divide-by-zero guarded
- *  • drawBumpers()    — glow alpha clamped (was 80×4=320, illegal)
- *  • drawBall()       — glow alpha clamped for safety
- *  All fixes prevent IllegalArgumentException: Color parameter outside of
- *  expected range, which crashed the game on every bumper hit.
- * =============================================================================
  */
 public class PinballPanel extends JPanel implements ActionListener, KeyListener {
 

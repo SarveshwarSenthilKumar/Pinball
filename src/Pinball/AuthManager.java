@@ -19,10 +19,10 @@ import javax.sound.sampled.*;
  * Launches the main game window upon successful authentication.
  *
  * File format (users.txt):
- *   username:sha256hash
+ * username:sha256hash
  *
  * Usage:
- *   javac *.java && java AuthManager
+ * javac *.java && java AuthManager
  * =============================================================================
  */
 public class AuthManager {
@@ -41,6 +41,9 @@ public class AuthManager {
     static final Font  FONT_TITLE  = new Font("Monospaced", Font.BOLD, 28);
     static final Font  FONT_LABEL  = new Font("Monospaced", Font.PLAIN, 13);
     static final Font  FONT_BTN    = new Font("Monospaced", Font.BOLD,  14);
+
+    // Mute visual component
+    private JLabel muteLabel;
 
     // ── Entry Point ───────────────────────────────────────────────────────────
     /**
@@ -70,9 +73,13 @@ public class AuthManager {
         JFrame frame = new JFrame("PINBALL ARCADE — Login");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setResizable(false);
-        frame.setSize(576, 624);
+        frame.setSize(576, 644); // Slightly taller to accommodate the mute text safely
         frame.setLocationRelativeTo(null);
         frame.setContentPane(buildLoginPanel(frame));
+        
+        // Setup global key listener on the frame for the 'M' key to mute/unmute
+        setupMuteHotkey(frame);
+        
         return frame;
     }
 
@@ -93,7 +100,7 @@ public class AuthManager {
                 for (int y = 0; y < getHeight(); y += 3) g2.drawLine(0, y, getWidth(), y);
             }
         };
-        root.setBorder(new EmptyBorder(30, 40, 30, 40));
+        root.setBorder(new EmptyBorder(30, 40, 20, 40));
 
         // ── Title block ──
         JPanel titlePanel = new JPanel(new GridLayout(3,1,0,6));
@@ -113,7 +120,7 @@ public class AuthManager {
         gbc.fill   = GridBagConstraints.HORIZONTAL;
         gbc.gridwidth = 2;
 
-        JTextField  userField = styledField();
+        JTextField   userField = styledField();
         JPasswordField passField = styledPassField();
 
         addFormRow(form, gbc, 0, "USERNAME :", userField);
@@ -147,9 +154,47 @@ public class AuthManager {
         south.setOpaque(false);
         south.add(btnPanel, BorderLayout.NORTH);
         south.add(scoresBtn, BorderLayout.SOUTH);
-        root.add(south, BorderLayout.SOUTH);
+        
+        // ── Mute Indicator Audio UI Row ──
+        muteLabel = neonLabel("PRESS [M] TO MUTE MUSIC", new Font("Monospaced", Font.ITALIC, 11), new Color(120, 120, 150));
+        muteLabel.setBorder(new EmptyBorder(10, 0, 0, 0));
+        
+        JPanel extraSouth = new JPanel(new BorderLayout());
+        extraSouth.setOpaque(false);
+        extraSouth.add(south, BorderLayout.NORTH);
+        extraSouth.add(muteLabel, BorderLayout.SOUTH);
+        
+        root.add(extraSouth, BorderLayout.SOUTH);
 
         return root;
+    }
+
+    /** Sets up Swing Key Bindings to look for the 'M' key globally on this window frame */
+    private void setupMuteHotkey(JFrame frame) {
+        JComponent contentPane = (JComponent) frame.getContentPane();
+        
+        // InputMap & ActionMap for pressing 'M'
+        contentPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_M, 0), "toggleMute");
+        contentPane.getActionMap().put("toggleMute", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                MusicPlayer.toggleMute();
+                updateMuteLabel();
+            }
+        });
+    }
+
+    /** Updates the visual display indicating whether music is currently muted */
+    private void updateMuteLabel() {
+        if (muteLabel != null) {
+            if (MusicPlayer.isMuted()) {
+                muteLabel.setText("MUSIC MUTED — PRESS [M] TO UNMUTE");
+                muteLabel.setForeground(COL_ACCENT2); // Change to hot pink when muted
+            } else {
+                muteLabel.setText("PRESS [M] TO MUTE MUSIC");
+                muteLabel.setForeground(new Color(120, 120, 150));
+            }
+        }
     }
 
     // ── Event Handlers ────────────────────────────────────────────────────────
@@ -359,9 +404,13 @@ public class AuthManager {
 class MusicPlayer {
  
     private static Clip clip = null;
+    private static boolean muted = false;
+    private static float currentVolumeGain = 1.0f; // Stores user intent volume
+    private static String currentTrackPath = null;
  
     /** Starts looping the given WAV file. Stops any current track first. */
-    public static void play(String wavPath) {
+    public static synchronized void play(String wavPath) {
+        currentTrackPath = wavPath;
         stop();
         Thread thread = new Thread(() -> {
             try {
@@ -371,10 +420,16 @@ class MusicPlayer {
                     return;
                 }
                 AudioInputStream ais = AudioSystem.getAudioInputStream(file);
-                clip = AudioSystem.getClip();
-                clip.open(ais);
-                clip.loop(Clip.LOOP_CONTINUOUSLY);
-                clip.start();
+                synchronized (MusicPlayer.class) {
+                    clip = AudioSystem.getClip();
+                    clip.open(ais);
+                    
+                    // Apply volume constraint before starting based on mute state
+                    applyVolume(muted ? 0f : currentVolumeGain);
+                    
+                    clip.loop(Clip.LOOP_CONTINUOUSLY);
+                    clip.start();
+                }
             } catch (UnsupportedAudioFileException e) {
                 System.err.println("[MusicPlayer] Unsupported format (needs 16-bit PCM WAV): " + e.getMessage());
             } catch (LineUnavailableException e) {
@@ -388,7 +443,7 @@ class MusicPlayer {
     }
  
     /** Stops playback immediately. */
-    public static void stop() {
+    public static synchronized void stop() {
         if (clip != null && clip.isRunning()) {
             clip.stop();
             clip.close();
@@ -399,15 +454,33 @@ class MusicPlayer {
     /**
      * Sets volume. 0.0f = silent, 1.0f = full.
      */
-    public static void setVolume(float gain) {
+    public static synchronized void setVolume(float gain) {
+        currentVolumeGain = Math.max(0f, Math.min(1f, gain));
+        if (!muted) {
+            applyVolume(currentVolumeGain);
+        }
+    }
+
+    /** Internal helper that changes the data line mixer volume control directly */
+    private static void applyVolume(float targetGain) {
         if (clip == null) return;
-        gain = Math.max(0f, Math.min(1f, gain));
         try {
             FloatControl vol = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-            float dB = gain == 0f ? vol.getMinimum() : 20f * (float) Math.log10(gain);
+            float dB = targetGain == 0f ? vol.getMinimum() : 20f * (float) Math.log10(targetGain);
             vol.setValue(Math.max(vol.getMinimum(), Math.min(vol.getMaximum(), dB)));
         } catch (IllegalArgumentException e) {
             System.err.println("[MusicPlayer] Volume control not supported.");
         }
+    }
+
+    /** Toggles the system mute state safely */
+    public static synchronized void toggleMute() {
+        muted = !muted;
+        applyVolume(muted ? 0f : currentVolumeGain);
+    }
+
+    /** Returns current mute configuration status */
+    public static synchronized boolean isMuted() {
+        return muted;
     }
 }

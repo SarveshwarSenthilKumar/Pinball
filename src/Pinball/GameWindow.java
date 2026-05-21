@@ -22,10 +22,10 @@ import javax.swing.border.*;
  * saving to ScoreManager.
  *
  * Key responsibilities:
- *  • Build and layout the game frame with HUD sidepanel
- *  • Refresh HUD on every game tick via GameListener callback
- *  • Open/close the Store dialog (PowerupStore inner class)
- *  • Save score to scores.txt when a game ends
+ * • Build and layout the game frame with HUD sidepanel
+ * • Refresh HUD on every game tick via GameListener callback
+ * • Open/close the Store dialog (PowerupStore inner class)
+ * • Save score to scores.txt when a game ends
  * =============================================================================
  */
 public class GameWindow extends JFrame implements GameListener {
@@ -38,6 +38,7 @@ public class GameWindow extends JFrame implements GameListener {
     // HUD labels
     private JLabel lblScore, lblMoney, lblLives, lblMultiplier;
     private JLabel lblPowerupActive;
+    private JLabel lblMuteHint; // Mute label reference
     private JProgressBar ballSpeedBar;
 
     // Sidebar panels
@@ -69,6 +70,7 @@ public class GameWindow extends JFrame implements GameListener {
             e.printStackTrace();
         }
     }   
+    
     private void buildUI() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
@@ -87,6 +89,9 @@ public class GameWindow extends JFrame implements GameListener {
         // Bottom bar
         add(buildBottomBar(), BorderLayout.SOUTH);
 
+        // Set up the 'M' Key binding for muting/unmuting
+        setupMuteHotkey();
+
         pack();
         setLocationRelativeTo(null);
         setMinimumSize(getSize());
@@ -99,6 +104,7 @@ public class GameWindow extends JFrame implements GameListener {
     private JPanel buildHudPanel() {
         JPanel hud = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g;
                 g2.setColor(AuthManager.COL_PANEL);
                 g2.fillRect(0, 0, getWidth(), getHeight());
@@ -160,7 +166,15 @@ public class GameWindow extends JFrame implements GameListener {
         // Controls cheat-sheet
         hud.add(hudTitle("CONTROLS"));
         hud.add(Box.createVerticalStrut(6));
-        String[] controls = {"← Left flipper","→ Right flipper","Space  Launch","S  Open Store","R  Restart","Esc  Quit", "P  Pause / Resume"};
+        
+        // Dynamic mute control hint setup
+        String initialMuteText = MusicPlayer.isMuted() ? "M  Unmute Music" : "M  Mute Music";
+        lblMuteHint = new JLabel(initialMuteText);
+        lblMuteHint.setFont(new Font("Monospaced", Font.BOLD, 10));
+        lblMuteHint.setForeground(MusicPlayer.isMuted() ? AuthManager.COL_ACCENT2 : new Color(120,120,170));
+        lblMuteHint.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        String[] controls = {"← Left flipper", "→ Right flipper", "Space  Launch", "S  Open Store", "R  Restart", "Esc  Quit", "P  Pause / Resume"};
         for (String c : controls) {
             JLabel cl = new JLabel(c);
             cl.setFont(new Font("Monospaced", Font.PLAIN, 10));
@@ -169,6 +183,9 @@ public class GameWindow extends JFrame implements GameListener {
             hud.add(cl);
             hud.add(Box.createVerticalStrut(3));
         }
+        
+        // Add mute helper text row to instructions sheet
+        hud.add(lblMuteHint);
 
         return hud;
     }
@@ -190,6 +207,32 @@ public class GameWindow extends JFrame implements GameListener {
         bar.add(restartBtn);
         bar.add(quitBtn);
         return bar;
+    }
+
+    /** Binds the 'M' key to toggle mute on the MusicPlayer without interrupting focus fields */
+    private void setupMuteHotkey() {
+        JComponent content = (JComponent) getContentPane();
+        content.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_M, 0), "gameToggleMute");
+        content.getActionMap().put("gameToggleMute", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                MusicPlayer.toggleMute();
+                updateMuteText();
+            }
+        });
+    }
+
+    /** Changes HUD controls cheat-sheet color indicators based on current global audio parameters */
+    private void updateMuteText() {
+        if (lblMuteHint != null) {
+            if (MusicPlayer.isMuted()) {
+                lblMuteHint.setText("M  Unmute Music");
+                lblMuteHint.setForeground(AuthManager.COL_ACCENT2); // Hot Pink warning highlight
+            } else {
+                lblMuteHint.setText("M  Mute Music");
+                lblMuteHint.setForeground(new Color(120,120,170));  // Standard gray-blue text tint
+            }
+        }
     }
 
     // ── GameListener Implementation ───────────────────────────────────────────
@@ -330,16 +373,15 @@ public class GameWindow extends JFrame implements GameListener {
  * to purchase upgrades that modify gameplay via PinballPanel.applyPowerup().
  *
  * Available powerups:
- *  • MULTI×2    — doubles score multiplier
- *  • MAGNET     — ball is attracted toward flippers
- *  • FIREBALL   — ball destroys bumpers on contact (10 hits)
- *  • SLOW-MO    — halves ball speed for 15 seconds
- *  • EXTRA LIFE — grants an additional life
- *  • MEGA BUMPER— bumpers worth 3× coins for 20 seconds
+ * • MULTI×2    — doubles score multiplier
+ * • MAGNET     — ball is attracted toward flippers
+ * • FIREBALL   — ball destroys bumpers on contact (10 hits)
+ * • SLOW-MO    — halves ball speed for 15 seconds
+ * • EXTRA LIFE — grants an additional life
+ * • MEGA BUMPER— bumpers worth 3× coins for 20 seconds
  */
 class PowerupStore extends JDialog {
 
-    // Powerup definition: {name, cost, description, id}
     private static final Object[][] POWERUPS = {
         {"⚡ MULTI ×2",    50,  "Doubles score multiplier for 30s",       "MULTI2"},
         {"🧲 MAGNET",      80,  "Ball drifts toward flippers (20s)",      "MAGNET"},
@@ -352,12 +394,6 @@ class PowerupStore extends JDialog {
     private final PinballPanel game;
     private JLabel coinsLabel;
 
-    /**
-     * Constructs the Store dialog.
-     *
-     * @param parent the owning GameWindow
-     * @param game   the active PinballPanel (to query money / apply powerups)
-     */
     PowerupStore(GameWindow parent, PinballPanel game) {
         super(parent, "🏪  POWERUP STORE", true);
         this.game = game;
@@ -375,13 +411,11 @@ class PowerupStore extends JDialog {
         };
         root.setBorder(new EmptyBorder(20,20,20,20));
 
-        // Title
         JLabel title = new JLabel("◈ POWERUP STORE ◈", SwingConstants.CENTER);
         title.setFont(new Font("Monospaced", Font.BOLD, 22));
         title.setForeground(new Color(255,200,0));
         root.add(title, BorderLayout.NORTH);
 
-        // Coin display
         JPanel coinRow = new JPanel(new FlowLayout(FlowLayout.CENTER));
         coinRow.setOpaque(false);
         coinsLabel = new JLabel("Your Coins: $" + game.getMoney());
@@ -389,7 +423,6 @@ class PowerupStore extends JDialog {
         coinsLabel.setForeground(new Color(255,220,60));
         coinRow.add(coinsLabel);
 
-        // Powerup grid
         JPanel grid = new JPanel(new GridLayout(POWERUPS.length, 1, 0, 10));
         grid.setOpaque(false);
 
@@ -403,7 +436,6 @@ class PowerupStore extends JDialog {
         center.add(grid,    BorderLayout.CENTER);
         root.add(center, BorderLayout.CENTER);
 
-        // Close
         JButton closeBtn = new JButton("✕  CLOSE STORE");
         closeBtn.setFont(new Font("Monospaced", Font.BOLD, 13));
         closeBtn.setForeground(AuthManager.COL_ACCENT2);
@@ -420,11 +452,6 @@ class PowerupStore extends JDialog {
         setContentPane(root);
     }
 
-    /**
-     * Builds a single powerup card with name, description, cost, and buy button.
-     *
-     * @param pw Object array: {displayName, cost, description, id}
-     */
     private JPanel buildPowerupCard(Object[] pw) {
         String name = (String) pw[0];
         int    cost = (int)    pw[1];
@@ -437,7 +464,6 @@ class PowerupStore extends JDialog {
                 BorderFactory.createLineBorder(new Color(60,60,120), 1),
                 new EmptyBorder(8,12,8,12)));
 
-        // Left: name + desc
         JPanel info = new JPanel(new GridLayout(2,1,0,2));
         info.setOpaque(false);
         JLabel nameLabel = new JLabel(name);
@@ -448,7 +474,6 @@ class PowerupStore extends JDialog {
         descLabel.setForeground(new Color(140,140,180));
         info.add(nameLabel); info.add(descLabel);
 
-        // Right: cost + buy button
         JPanel rightPanel = new JPanel(new GridLayout(2,1,0,4));
         rightPanel.setOpaque(false);
         JLabel costLabel = new JLabel("$" + cost, SwingConstants.CENTER);
@@ -471,7 +496,6 @@ class PowerupStore extends JDialog {
         return card;
     }
 
-    /** Attempts to purchase a powerup, deducting coins and applying the effect. */
     private void handleBuy(String id, String name, int cost) {
         if (game.getMoney() < cost) {
             JOptionPane.showMessageDialog(this,
@@ -491,33 +515,14 @@ class PowerupStore extends JDialog {
 // =============================================================================
 // ScoreManager — Static utility for score file I/O
 // =============================================================================
-/**
- * Static utility class for reading and writing player scores.
- *
- * File format (scores.txt):
- *   username:score:timestamp
- *
- * Scores are stored in descending order of score value.
- */
 class ScoreManager {
+    private ScoreManager() {}
 
-    private ScoreManager() {}   // utility class — no instantiation
-
-    /**
-     * Appends a new score entry to the scores file, then re-sorts the file
-     * so the highest scores appear first.
-     *
-     * @param filepath path to the scores text file
-     * @param username player name
-     * @param score    final numeric score
-     */
     public static void saveScore(String filepath, String username, int score) {
         String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date());
-        // Load existing, add new, sort, save
         List<String[]> all = loadAllScores(filepath);
         all.add(new String[]{username, String.valueOf(score), timestamp});
-        all.sort((a, b) -> Integer.compare(
-                Integer.parseInt(b[1]), Integer.parseInt(a[1])));  // descending
+        all.sort((a, b) -> Integer.compare(Integer.parseInt(b[1]), Integer.parseInt(a[1])));
 
         try (PrintWriter pw = new PrintWriter(new FileWriter(filepath))) {
             for (String[] entry : all) {
@@ -528,12 +533,6 @@ class ScoreManager {
         }
     }
 
-    /**
-     * Loads all score entries from the file.
-     *
-     * @param filepath path to the scores text file
-     * @return list of {username, score, timestamp} arrays, sorted descending by score
-     */
     public static List<String[]> loadAllScores(String filepath) {
         List<String[]> list = new ArrayList<>();
         File f = new File(filepath);
@@ -553,7 +552,6 @@ class ScoreManager {
         } catch (IOException e) {
             System.err.println("[ScoreManager] Failed to read scores: " + e.getMessage());
         }
-        // Sort descending by score
         list.sort((a,b) -> {
             try { return Integer.compare(Integer.parseInt(b[1]), Integer.parseInt(a[1])); }
             catch (NumberFormatException ex) { return 0; }
@@ -565,9 +563,6 @@ class ScoreManager {
 // =============================================================================
 // GameState — Data transfer object for HUD updates
 // =============================================================================
-/**
- * Immutable snapshot of game state passed to GameListener on each tick.
- */
 class GameState {
     final int    score;
     final int    money;
@@ -590,20 +585,7 @@ class GameState {
 // =============================================================================
 // GameListener — Callback interface from PinballPanel to GameWindow
 // =============================================================================
-/**
- * Observer interface allowing PinballPanel to communicate state changes
- * back to the GameWindow without a direct reference to the concrete class.
- */
 interface GameListener {
-    /**
-     * Fired every physics tick with a fresh GameState snapshot.
-     * @param state the current game state
-     */
     void onGameStateChanged(GameState state);
-
-    /**
-     * Fired once when the player has no lives remaining.
-     * @param finalScore total score accumulated
-     */
     void onGameOver(int finalScore);
 }

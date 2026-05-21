@@ -3,6 +3,6 @@ make sure the borders work near the paddles - completed
 Ball skins, a feature where the player can pick the color of the ball - incomplete
 Combo counter, tracks bumper hits
 Add music - completed
-add mute button 
+add mute button - completed
 Personal best display, show the player's personal best
 Pause button to review the position - completed

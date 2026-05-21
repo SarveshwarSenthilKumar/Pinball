@@ -1,8 +1,8 @@
 fix speed of the flippers - make sure speed applies everywhere - completed
 make sure the borders work near the paddles - completed
 Ball skins, a feature where the player can pick the color of the ball - incomplete
-Combo counter, tracks bumper hits
+Combo counter, tracks bumper hits - incompleted
 Add music - completed
 add mute button - completed
-Personal best display, show the player's personal best
+Personal best display, show the player's personal best - completed
 Pause button to review the position - completed

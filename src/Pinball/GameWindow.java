@@ -39,6 +39,7 @@ public class GameWindow extends JFrame implements GameListener {
     private JLabel lblScore, lblMoney, lblLives, lblMultiplier;
     private JLabel lblPowerupActive;
     private JLabel lblMuteHint; // Mute label reference
+    public JLabel lblPersonalBest;
     private JProgressBar ballSpeedBar;
 
     // Sidebar panels
@@ -97,6 +98,27 @@ public class GameWindow extends JFrame implements GameListener {
         setMinimumSize(getSize());
     }
 
+    private int getPersonalBest() {
+
+        List<String[]> scores =
+                ScoreManager.loadAllScores(scoresFile);
+
+        int best = 0;
+
+        for (String[] s : scores) {
+
+            if (s[0].equalsIgnoreCase(username)) {
+
+                try {
+                    best = Math.max(best,
+                            Integer.parseInt(s[1]));
+                } catch (Exception ignored) {}
+            }
+        }
+
+        return best;
+    }
+
     /**
      * Constructs the right-side HUD panel showing score, money, lives,
      * active powerups, and control hints.
@@ -124,13 +146,18 @@ public class GameWindow extends JFrame implements GameListener {
         lblLives       = hudValue("♥♥♥",         new Color(255,80,80));
         lblMultiplier  = hudValue("×1",          new Color(120,255,120));
 
+        lblPersonalBest = hudValue(String.format("%,d", getPersonalBest()), new Color(255,120,255));
+
         hud.add(hudRow("SCORE",       lblScore));
         hud.add(Box.createVerticalStrut(10));
         hud.add(hudRow("COINS",       lblMoney));
         hud.add(Box.createVerticalStrut(10));
         hud.add(hudRow("LIVES",       lblLives));
         hud.add(Box.createVerticalStrut(10));
-        hud.add(hudRow("MULTI",       lblMultiplier));
+        hud.add(hudRow("MULTI", lblMultiplier));
+        hud.add(Box.createVerticalStrut(10));
+
+        hud.add(hudRow("PERSONAL BEST", lblPersonalBest));
         hud.add(Box.createVerticalStrut(16));
 
         hud.add(separatorLine());
@@ -249,6 +276,10 @@ public class GameWindow extends JFrame implements GameListener {
             lblMoney.setText("$" + state.money);
             lblLives.setText(buildLivesString(state.lives));
             lblMultiplier.setText("×" + state.multiplier);
+
+            int pb = Math.max(getPersonalBest(), state.score);
+
+            lblPersonalBest.setText(String.format("%,d", pb));
 
             // Active powerup label
             if (state.activePowerup != null && !state.activePowerup.isEmpty()) {

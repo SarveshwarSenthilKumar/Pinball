@@ -2,3 +2,24 @@ Ball of Duty is a pinball game developed in Java Swing in order to demonstrate c
 
 As for my tasks accomplished, I was able to get an easy overview of my progress through my GitHub commits which were committed frequently. The first course of action I took was to fix bugs and minor errors as the code which Claude, my code agent, returned was erroneous and did not run. Following bug fixing and tweaks to the mechanics of the game, I was able to focus on adding various features such as a pause feature, randomizing the launch value of the ball, adding music, as well as a personal best counter. In addition to the development of these new features, I also worked on maintenance of current features with improving the style and sizing of the login page as well as continuous testing to make sure everything was integrated correctly.
 
+
+-----------------------------------------------------------------------------------------
+
+Collision Detection: Used for walls, bumpers, and flippers with different responses
+Buttons and Mouse Events: Login page, high scores, main menu, various buttons, and key pressed checked for controls and extra controls.
+Abstract Classes and Inheritance: All GUI elements are based upon JFrame and other Java Swing frontend protocols. The physics engine is used by the main Game class for abstraction purposes.
+GUI Design: all major elements through game panel and all menus
+Files I/O: Used for authentication and for keeping track of score.
+
+Tasks Accomplished:
+Fixed bugs and minor errors
+Updated mechanics of the game (pinball flipper speed)
+Minor fix to bumper crashes
+Fixed errors with coins not saving
+Made bumpers longer to make game more playable
+Added a pause feature to the game
+Randomized launch value instead of one spot
+Updated size of the login page
+Added music to background
+Added a mute button
+Developed a Personal Best Counter

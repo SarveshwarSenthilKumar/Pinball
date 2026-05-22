@@ -530,7 +530,7 @@ public class PinballPanel extends JPanel implements ActionListener, KeyListener 
 
     private void drawBall(Graphics2D g2) {
         int r=(int)BALL_RADIUS;
-        // FIX: clampA applied — values were within range here but clamped for safety
+
         for (int glow=3;glow>=1;glow--) {
             Color gc=fireballHits>0
                     ? new Color(255,120,0,clampA(30*glow))

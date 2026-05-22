@@ -287,7 +287,7 @@ public class AuthManager {
      * @param username the logged-in player's username
      */
     private void launchGame(String username) {
-        MusicPlayer.play("src/Pinball/vanessa.wav");   // place music.wav next to your .class files
+        MusicPlayer.play("src/Pinball/vanessa.wav");   
         SwingUtilities.invokeLater(() -> {
             GameWindow window = new GameWindow(username, SCORES_FILE);
             window.setVisible(true);
